@@ -1,11 +1,7 @@
-#resource "random_pet" "rg-name" {
-#  prefix    = var.resource_group_name_prefix
+#resource "azurerm_resource_group" "rg" {
+#  name      = var.resource_group_name
+#  location  = var.resource_group_location
 #}
-#
-resource "azurerm_resource_group" "rg" {
-  name      = var.resource_group_name
-  location  = var.resource_group_location
-}
 
 # Create virtual network
 resource "azurerm_virtual_network" "myterraformnetwork" {
