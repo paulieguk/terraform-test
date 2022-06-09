@@ -16,8 +16,9 @@ if (Get-Module -ListAvailable -Name 'Terraform') {
 
 #Set variables
 $ghrepo = 'https://raw.githubusercontent.com/paulieguk/terraform-test/main'
-$saname = 'satestvalue'
-$rgname = 'rgtestvale'
+$saname = 'sa@lab.LabInstance.Id'
+$rgname = '@lab.CloudResourceGroup(ResourceGroup1).Name'
+$region = '@lab.CloudResourceGroup(ResourceGroup1).Location'
 
 #Download Terraform files from GitHub
 
