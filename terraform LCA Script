@@ -1,0 +1,41 @@
+<#Install required Modules - AZ commented out as LCA loads AZ modules automatically
+
+if (Get-Module -ListAvailable -Name 'Az*') {
+  }
+  else {
+    Install-Module -name az -Scope CurrentUser -Repository PSGallery -Force
+    }
+
+if (Get-Module -ListAvailable -Name 'Terraform') {
+  }
+  else {
+    Install-Module -name Terraform -Scope CurrentUser -Repository PSGallery -Force
+    }
+
+#>
+
+#Set variables
+$ghrepo = 'https://raw.githubusercontent.com/paulieguk/terraform-test/main'
+$saname = 'satestvalue'
+$rgname = 'rgtestvale'
+
+#Download Terraform files from GitHub
+
+Invoke-WebRequest -uri "$ghrepo/main.tf" -OutFile .\main.tf
+Invoke-WebRequest -uri "$ghrepo/variables.tf" -OutFile .\variables.tf
+Invoke-WebRequest -uri "$ghrepo/providers.tf" -OutFile .\providers.tf
+Invoke-WebRequest -uri "$ghrepo/output.tf" -OutFile .\output.tf
+
+#Update Terraform variables with Cloud Slice values
+
+((get-content -Path .\variables.tf -raw) -replace '<sahere>', $saname -replace '<rghere>', $rgname | Set-Content -Path .\variables.tf)
+
+<# Run Terraform
+
+Terraform init
+
+Terraform plan -out main.tfplan
+
+Terraform apply main.tfplan
+#>
+
