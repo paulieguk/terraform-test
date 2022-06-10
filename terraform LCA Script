@@ -1,42 +1,39 @@
-<#Install required Modules - AZ commented out as LCA loads AZ modules automatically
-
-if (Get-Module -ListAvailable -Name 'Az*') {
-  }
-  else {
-    Install-Module -name az -Scope CurrentUser -Repository PSGallery -Force
-    }
-
-if (Get-Module -ListAvailable -Name 'Terraform') {
-  }
-  else {
-    Install-Module -name Terraform -Scope CurrentUser -Repository PSGallery -Force
-    }
-
-#>
-
 #Set variables
 $ghrepo = 'https://raw.githubusercontent.com/paulieguk/terraform-test/main'
 $saname = 'sa@lab.LabInstance.Id'
 $rgname = '@lab.CloudResourceGroup(ResourceGroup1).Name'
 $region = '@lab.CloudResourceGroup(ResourceGroup1).Location'
 
-#Download Terraform files from GitHub
+# Install Terraform
 
+Invoke-WebRequest -uri https://raw.githubusercontent.com/paulieguk/terraform-test/main/terraform_linux.zip -OutFile .\terraform_linux.zip
+Expand-Archive -Path .\terraform_linux.zip -DestinationPath .
+chmod 777 ./terraform
+
+#Import Resource Group - Download Terraform files from GitHub
+Invoke-WebRequest -uri "$ghrepo/providers.tf" -OutFile .\providers.tf
+Invoke-WebRequest -uri "$ghrepo/import.tf" -OutFile .\import.tf
+
+#Update Import.tf file with Cloud Slice values
+((get-content -Path .\import.tf -raw) -replace 'rgname', $rgname -replace 'rglocation', $region | Set-Content -Path .\import.tf)
+
+#Authenticate and get ResourceID for the Resource Group
+az login -u @lab.CloudPortalCredential(User1).Username -p @lab.CloudPortalCredential(User1).Password
+$resourceGroupID = az group show --name $rgname --query id
+
+#Import the Resource Group
+./terraform init -input=false
+./terraform import azurerm_resource_group.rg $resourceGroupID
+
+#Download Terraform files for provisioning
 Invoke-WebRequest -uri "$ghrepo/main.tf" -OutFile .\main.tf
 Invoke-WebRequest -uri "$ghrepo/variables.tf" -OutFile .\variables.tf
-Invoke-WebRequest -uri "$ghrepo/providers.tf" -OutFile .\providers.tf
 Invoke-WebRequest -uri "$ghrepo/output.tf" -OutFile .\output.tf
 
-#Update Terraform variables with Cloud Slice values
+#Update variables file with Cloud Slice values
+((get-content -Path .\variables.tf -raw) -replace 'saname', $saname | Set-Content -Path .\variables.tf)
 
-((get-content -Path .\variables.tf -raw) -replace '<sahere>', $saname -replace '<rghere>', $rgname | Set-Content -Path .\variables.tf)
-
-<# Run Terraform
-
-Terraform init
-
-Terraform plan -out main.tfplan
-
-Terraform apply main.tfplan
-#>
-
+# Run Terraform to deploy resources
+./terraform init -upgrade -input=false
+./terraform plan -out main.tfplan -input=false
+./terraform apply main.tfplan
