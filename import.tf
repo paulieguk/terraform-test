@@ -1,4 +1,4 @@
-resource "azurerm_resource_group" "rg" {
+resource "azurerm_resource_group" "rgname" {
   name = "rgname"
   location = "rglocation"
 }
